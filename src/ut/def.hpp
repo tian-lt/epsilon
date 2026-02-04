@@ -1,0 +1,14 @@
+#pragma once
+
+// std
+#include <cstdint>
+#include <vector>
+
+namespace epxut {
+
+using sz = epx::z<std::vector<uint8_t>>;
+using mz = epx::z<std::vector<uint16_t>>;
+using lz = epx::z<std::vector<uint32_t>>;
+using xz = epx::z<std::vector<uint64_t>>;
+
+}  // namespace epxut
