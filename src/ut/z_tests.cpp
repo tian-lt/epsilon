@@ -61,6 +61,26 @@ TEST(z_tests, normalize) {
   }
 }
 
+TEST(z_tests, negate) {
+  {
+    sz zero;
+    epx::negate(zero);
+    EXPECT_TRUE(epx::is_zero(zero));
+  }
+  {
+    sz num = {.digits = {1}};
+    sz expected = {.digits = {1}, .sgn = epx::sign::negative};
+    epx::negate(num);
+    EXPECT_EQ(expected, num);
+  }
+  {
+    sz num = {.digits = {1}, .sgn = epx::sign::negative};
+    sz expected = {.digits = {1}};
+    epx::negate(num);
+    EXPECT_EQ(expected, num);
+  }
+}
+
 TEST(z_tests, add) {
   {
     sz zero, one{.digits = {1}}, minus_one{.digits = {1}, .sgn = epx::sign::negative};
