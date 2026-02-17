@@ -133,6 +133,9 @@ constexpr z<C>& normalize(z<C>& num) noexcept {
 
 template <container C>
 constexpr z<C>& negate(z<C>& num) noexcept {
+  if (is_zero(num)) {
+    return num;
+  }
   num.sgn = is_positive(num) ? sign::negative : sign::positive;
   return num;
 }

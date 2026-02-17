@@ -98,4 +98,24 @@ TEST(r_tests, add) {
   }
 }
 
+TEST(r_tests, opp) {
+  {
+    auto x = epx::make_q(stosz("0"), stosz("1"));
+    auto expr = epx::opp(x);
+    EXPECT_EQ("0", epx::to_string(expr, 0));
+    EXPECT_EQ("0.00000", epx::to_string(expr, 5));
+  }
+  {
+    auto x = epx::make_q(stosz("1"), stosz("1"));
+    auto expr = epx::opp(x);
+    EXPECT_EQ("-1", epx::to_string(expr, 0));
+    EXPECT_EQ("-1.00000", epx::to_string(expr, 5));
+  }
+  {
+    auto x = epx::make_q(stosz("-1"), stosz("7"));
+    auto expr = epx::opp(x);
+    EXPECT_EQ("-0.14285714285714285714286", epx::to_string(expr, 23));
+  }
+}
+
 }  // namespace epxut

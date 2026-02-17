@@ -35,6 +35,15 @@ constexpr r<C> add(r<C> x, r<C> y) {
   };
 }
 
+template <container C>
+constexpr r<C> opp(r<C> x) {
+  return [x = std::move(x)](unsigned int n) -> coro::lazy<z<C>> {
+    auto xn = co_await x(n);
+    negate(xn);
+    co_return xn;
+  };
+}
+
 }  // namespace epx
 
 #endif  // EPSILON_INC_R_HPP
