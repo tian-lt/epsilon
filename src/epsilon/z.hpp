@@ -76,7 +76,7 @@ constexpr auto umul(T lhs, T rhs) {
 // u0 - LSD, u1 - MSD
 template <class D>
 constexpr auto div_2d(D u0, D u1, D v) {
-  using W = wide_digit_t<D>;
+  using W = wide_digit_type<D>;
   struct result_t {
     W q;
     D r;
@@ -233,7 +233,7 @@ constexpr z<C> mul_n(const z<C>& lhs, const z<C>& rhs) {
   for (size_t j = 0; j < std::ranges::size(b); ++j) {
     D cy = 0;
     for (size_t i = 0; i < std::ranges::size(a); ++i) {
-      auto [p0, p1] = details::umul<default_digit_t>(a[i], b[j]);
+      auto [p0, p1] = details::umul<default_digit_type>(a[i], b[j]);
       p0 += cy;
       cy = (p0 < cy ? 1u : 0u) + p1;
       r.digits[i + j] += p0;
@@ -248,7 +248,7 @@ constexpr z<C> mul_n(const z<C>& lhs, const z<C>& rhs) {
 template <container C>
 constexpr auto div_n(const z<C>& u, typename z<C>::digit_type v) {
   using D = typename z<C>::digit_type;
-  static_assert(sizeof(D) <= sizeof(max_digit_t));
+  static_assert(sizeof(D) <= sizeof(max_digit_type));
 
   struct {
     z<C> q;
@@ -283,7 +283,7 @@ constexpr auto div_n(z<C> lhs, z<C> rhs) {
   if (rel > 0) {
     if (std::ranges::size(rhs.digits) > 1) {
       using D = typename z<C>::digit_type;
-      using W = wide_digit_t<D>;
+      using W = wide_digit_type<D>;
       constexpr W b = W{1} << (sizeof(D) * CHAR_BIT);
       constexpr D mask = D{b - 1};
 
@@ -423,6 +423,26 @@ constexpr auto floor_div(z<C> lhs, z<C> rhs) {
 
   res.q.sgn = sgn;
   res.r.sgn = rhs.sgn;
+  return res;
+}
+
+template <container C>
+constexpr auto ceil_div(z<C> lhs, z<C> rhs) {
+  struct result_t {
+    z<C> q;
+    z<C> r;
+  };
+
+  auto sgn = lhs.sgn == rhs.sgn ? sign::positive : sign::negative;
+  auto [q, r] = div_n(std::move(lhs), rhs);
+  result_t res = {.q = std::move(q), .r = std::move(r)};
+
+  if (sgn == sign::positive && !is_zero(res.r)) {
+    res.q = add_n(res.q, details::one<C>());
+    res.r = sub_n(rhs, res.r);
+  }
+  res.q.sgn = sgn;
+  res.r.sgn = rhs.sgn == sign::positive ? sign::negative : sign::positive;
   return res;
 }
 
