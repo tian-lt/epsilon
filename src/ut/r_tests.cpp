@@ -18,28 +18,28 @@ TEST(r_tests, make_q) {
   {
     sz zero;
     auto q = epx::make_q(zero, one);  // 0/1
-    EXPECT_TRUE(epx::is_zero(q(1).get()));
-    EXPECT_TRUE(epx::is_zero(q(10).get()));
-    EXPECT_TRUE(epx::is_zero(q(100).get()));
+    EXPECT_TRUE(epx::is_zero(q.approx(1).get()));
+    EXPECT_TRUE(epx::is_zero(q.approx(10).get()));
+    EXPECT_TRUE(epx::is_zero(q.approx(100).get()));
   }
   {
     auto q = epx::make_q(one, one);  // 1/1
-    EXPECT_EQ(stosz("4"), q(1).get());
-    EXPECT_EQ(stosz("16"), q(2).get());
-    EXPECT_EQ(stosz("1048576"), q(10).get());
+    EXPECT_EQ(stosz("4"), q.approx(1).get());
+    EXPECT_EQ(stosz("16"), q.approx(2).get());
+    EXPECT_EQ(stosz("1048576"), q.approx(10).get());
   }
   {
     auto num = stosz("3");
     auto q = epx::make_q(one, num);  // 1/3
-    EXPECT_EQ(one, q(1).get());
-    EXPECT_EQ(stosz("341"), q(5).get());
+    EXPECT_EQ(one, q.approx(1).get());
+    EXPECT_EQ(stosz("341"), q.approx(5).get());
   }
 
   {
     auto num = stosz("-3");
     auto q = epx::make_q(one, num);  // 1/-3
-    EXPECT_EQ(stosz("-2"), q(1).get());
-    EXPECT_EQ(stosz("-342"), q(5).get());
+    EXPECT_EQ(stosz("-2"), q.approx(1).get());
+    EXPECT_EQ(stosz("-342"), q.approx(5).get());
   }
 }
 
@@ -210,7 +210,7 @@ TEST(r_tests, inv) {
   {
     auto zero = epx::make_q(stosz("0"), stosz("1"));
     auto expr = epx::inv(zero);
-    EXPECT_THROW(expr(10).get(), epx::msd_overflow_error);
+    EXPECT_THROW(expr.approx(10).get(), epx::msd_overflow_error);
   }
   {
     auto r = epx::make_q(stosz("1"), stosz("1"));
