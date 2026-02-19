@@ -15,49 +15,66 @@
 
 namespace epxut {
 
+TEST(z_tests, create) {
+  {
+    auto num = epx::create<sz::container_type>(0);
+    EXPECT_TRUE(epx::is_zero(num));
+  }
+  {
+    auto num = epx::create<sz::container_type>(0x030201);
+    sz expected{.digits = {1, 2, 3}};
+    EXPECT_EQ(expected, num);
+  }
+  {
+    auto num = epx::create<mz::container_type>(-2);
+    mz expected{.digits = {2}, .sgn = epx::sign::negative};
+    EXPECT_EQ(expected, num);
+  }
+}
+
 TEST(z_tests, normalize) {
   {
     sz zero;
     EXPECT_TRUE(epx::is_zero(zero));
-    EXPECT_TRUE(epx::is_positive(zero));
+    EXPECT_FALSE(epx::is_negative(zero));
     epx::normalize(zero);
     EXPECT_TRUE(epx::is_zero(zero));
-    EXPECT_TRUE(epx::is_positive(zero));
+    EXPECT_FALSE(epx::is_negative(zero));
   }
   {
     mz zero;
     EXPECT_TRUE(epx::is_zero(zero));
-    EXPECT_TRUE(epx::is_positive(zero));
+    EXPECT_FALSE(epx::is_negative(zero));
 
     zero.digits = {0, 0};
     EXPECT_FALSE(epx::is_zero(zero));
-    EXPECT_TRUE(epx::is_positive(zero));
+    EXPECT_FALSE(epx::is_negative(zero));
     epx::normalize(zero);
     epx::add_n(zero, zero);
     EXPECT_TRUE(epx::is_zero(zero));
-    EXPECT_TRUE(epx::is_positive(zero));
+    EXPECT_FALSE(epx::is_negative(zero));
   }
   {
     lz zero;
     EXPECT_TRUE(epx::is_zero(zero));
-    EXPECT_TRUE(epx::is_positive(zero));
+    EXPECT_FALSE(epx::is_negative(zero));
 
     zero.digits = {0, 0};
     zero.sgn = epx::sign::negative;
     EXPECT_FALSE(epx::is_zero(zero));
-    EXPECT_FALSE(epx::is_positive(zero));
+    EXPECT_TRUE(epx::is_negative(zero));
     epx::normalize(zero);
     EXPECT_TRUE(epx::is_zero(zero));
-    EXPECT_TRUE(epx::is_positive(zero));
+    EXPECT_FALSE(epx::is_negative(zero));
   }
   {
     sz num = {.digits = {0, 1, 2, 0, 0}, .sgn = epx::sign::negative};
     EXPECT_FALSE(epx::is_zero(num));
-    EXPECT_FALSE(epx::is_positive(num));
+    EXPECT_TRUE(epx::is_negative(num));
     epx::normalize(num);
     auto expected_digits = sz::container_type{0, 1, 2};
     EXPECT_EQ(expected_digits, num.digits);
-    EXPECT_FALSE(epx::is_positive(num));
+    EXPECT_TRUE(epx::is_negative(num));
   }
 }
 
@@ -123,7 +140,7 @@ TEST(z_tests, mul) {
     EXPECT_TRUE(epx::is_zero(epx::mul(zero, zero)));
     EXPECT_TRUE(epx::is_zero(epx::mul(zero, one)));
     EXPECT_TRUE(epx::is_zero(epx::mul(one, zero)));
-    EXPECT_TRUE(epx::is_positive(epx::mul(minus_one, zero)));
+    EXPECT_FALSE(epx::is_negative(epx::mul(minus_one, zero)));
 
     EXPECT_EQ(one, epx::mul(one, one));
     EXPECT_EQ(one, epx::mul(minus_one, minus_one));
@@ -313,7 +330,7 @@ TEST(z_tests, mul_4exp) {
     epx::mul_4exp(num, -32);  // Large negative exponent
     sz expected{};
     EXPECT_EQ(expected, num);
-    EXPECT_TRUE(epx::is_positive(num));  // Should reset sign to positive
+    EXPECT_FALSE(epx::is_negative(num));  // Should reset sign to positive
   }
   {
     sz num{};
@@ -321,6 +338,62 @@ TEST(z_tests, mul_4exp) {
     EXPECT_TRUE(epx::is_zero(num));
     epx::mul_4exp(num, -5);
     EXPECT_TRUE(epx::is_zero(num));
+  }
+}
+
+TEST(z_tests, pow) {
+  {
+    sz zero;
+    sz one = {.digits = {1}};
+    auto pwr = epx::pow(zero, 0);  // 0^0 = 1
+    EXPECT_EQ(one, pwr);
+  }
+  {
+    sz zero;
+    auto pwr = epx::pow(zero, 1);  // 0^1 = 0
+    EXPECT_EQ(zero, pwr);
+  }
+  {
+    auto num = create_sz(2);
+    auto expected = create_sz(64);
+    auto pwr = epx::pow(num, 6);  //  2^6 = 64
+    EXPECT_EQ(expected, pwr);
+  }
+  {
+    sz one = {.digits = {1}};
+    sz minus_one{.digits = {1}, .sgn = epx::sign::negative};
+    EXPECT_EQ(minus_one, epx::pow(minus_one, 9));  // (-1)^9 = -1
+    EXPECT_EQ(one, epx::pow(minus_one, 10));       // (-1)^10 = 1
+  }
+}
+
+TEST(z_tests, root) {
+  {
+    sz zero;
+    EXPECT_TRUE(epx::is_zero(epx::root(zero, 1)));
+    EXPECT_TRUE(epx::is_zero(epx::root(zero, 2)));
+    EXPECT_TRUE(epx::is_zero(epx::root(zero, 7)));
+  }
+  {
+    sz one = {.digits = {1}};
+    EXPECT_EQ(one, epx::root(sz{}, 0));
+    EXPECT_EQ(one, epx::root(one, 0));
+    EXPECT_EQ(one, epx::root(create_sz(2), 0));
+    EXPECT_EQ(one, epx::root(create_sz(9), 0));
+  }
+  {
+    EXPECT_EQ(create_sz(2), epx::root(create_sz(4), 2));
+    EXPECT_EQ(create_sz(3), epx::root(create_sz(9), 2));
+    EXPECT_EQ(create_sz(19), epx::root(create_sz(361), 2));
+    EXPECT_EQ(create_sz(1000), epx::root(create_sz(1000000), 2));
+  }
+  {
+    EXPECT_EQ(create_sz(5), epx::root(create_sz(125), 3));
+    EXPECT_EQ(create_sz(37398), epx::root(create_sz(1956111062177043216), 4));
+  }
+  {
+    EXPECT_EQ(create_sz(111), epx::root(create_sz(12345), 2));
+    EXPECT_EQ(create_sz(23), epx::root(create_sz(12345), 3));
   }
 }
 

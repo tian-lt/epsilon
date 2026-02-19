@@ -61,6 +61,18 @@ struct precision_overflow_error : public std::runtime_error {
   precision_overflow_error() : std::runtime_error("epx: precision overflow error") {}
 };
 
+struct negative_radicand_error : public std::runtime_error {
+  negative_radicand_error() : std::runtime_error("epx: negative radicand error") {}
+};
+
+struct negative_zpow_error : public std::runtime_error {
+  negative_zpow_error() : std::runtime_error("epx: negative power for z error") {}
+};
+
+struct kthroot_too_small_error : public std::runtime_error {
+  kthroot_too_small_error() : std::runtime_error("epx: kth-root too small error") {}
+};
+
 }  // namespace epx
 
 #endif
