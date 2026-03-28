@@ -91,6 +91,7 @@ jobs:
 
     - name: Generate coverage report
       run: |
+        mkdir -p coverage
         gcovr --root src \
           --filter 'src/epsilon/' \
           --exclude 'src/ut/' \
