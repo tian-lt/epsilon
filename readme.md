@@ -1,8 +1,6 @@
 Experimental project - work in progress
 
 > ### TODOs
-> - (algo.8) Logarithm to base $B^\prime$
-> - (algo.9) Arctangent
 > - (algo.10) Sine function
 > - Math expression - lexer/tokenizer
 > - Math expression - parser 

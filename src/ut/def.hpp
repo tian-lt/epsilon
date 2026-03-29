@@ -19,6 +19,8 @@ using mz = epx::z<std::vector<uint16_t>>;
 using lz = epx::z<std::vector<uint32_t>>;
 
 constexpr sz stosz(std::string_view chars) { return epx::try_from_chars<sz::container_type>(chars).value(); }
+constexpr mz stomz(std::string_view chars) { return epx::try_from_chars<mz::container_type>(chars).value(); }
+constexpr lz stolz(std::string_view chars) { return epx::try_from_chars<lz::container_type>(chars).value(); }
 template <std::integral T>
 constexpr sz create_sz(T val) {
   return epx::create<sz::container_type>(val);
