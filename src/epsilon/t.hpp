@@ -73,6 +73,10 @@ struct kthroot_too_small_error : public std::runtime_error {
   kthroot_too_small_error() : std::runtime_error("epx: kth-root too small error") {}
 };
 
+struct non_positive_log_error : public std::runtime_error {
+  non_positive_log_error() : std::runtime_error("epx: logarithm of non-positive number") {}
+};
+
 }  // namespace epx
 
 #endif
