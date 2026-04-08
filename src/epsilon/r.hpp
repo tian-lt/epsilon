@@ -994,4 +994,3 @@ constexpr r<C> cos(r<C> x) {
 }  // namespace epx
 
 #endif  // EPSILON_INC_R_HPP
-
