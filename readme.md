@@ -1,7 +1,7 @@
 Experimental project - work in progress
 
 > ### TODOs
-> - (algo.10) Sine function
+> - Other elementary functions
 > - Math expression - lexer/tokenizer
 > - Math expression - parser 
 > - Math expression - evaluation
