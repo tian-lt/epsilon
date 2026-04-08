@@ -694,7 +694,7 @@ constexpr z<C> sin_series(const z<C>& num, int k, int prec) {
     else
       sum = add_n(sum, term);
   }
-  return mul_4exp(sum, -(sin_guard));
+  return mul_4exp(sum, -sin_guard);
 }
 
 }  // namespace details
@@ -703,7 +703,7 @@ constexpr z<C> sin_series(const z<C>& num, int k, int prec) {
 template <container C>
 constexpr r<C> exp(r<C> x) {
   return r<C>{[x = std::move(x)](int n) -> coro::lazy<z<C>> {
-    constexpr int w = 1;             // B = 4 >= 4
+    constexpr int w = 1;             // B = 4
     const int ell = n + w;           // l = n + 1
     const int p = std::max(0, ell);  // p = max(0, l)
 
