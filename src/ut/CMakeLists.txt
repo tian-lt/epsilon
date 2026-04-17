@@ -18,6 +18,7 @@ FetchContent_MakeAvailable(googletest)
 add_executable(epsilon_ut
   chars_tests.cpp
   coro_tests.cpp
+  lexer_tests.cpp
   n_tests.cpp
   ops_tests.cpp
   r_tests.cpp
@@ -26,6 +27,7 @@ add_executable(epsilon_ut
 target_link_libraries(epsilon_ut PRIVATE
     gtest_main
     epsilon
+    epsilon_engine
 )
 
 if(MSVC)
