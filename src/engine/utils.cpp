@@ -39,7 +39,14 @@ void dump_val(std::string& out, const val_term* val, unsigned depth) {
                    fillmargin(out, depth);
                    out += std::format("real: {}\n", literal.raw);
                  },
-                 [&](auto) {},
+                 [&](token_id id) {
+                   fillmargin(out, depth);
+                   out += std::format("id: {}\n", id.raw);
+                 },
+                 [&](auto) {
+                   fillmargin(out, depth);
+                   out += std::format("unknown\n");
+                 },
              },
              val->val);
 }
@@ -70,6 +77,13 @@ void dump_binop_expr(std::string& out, const binop_expr* expr, unsigned depth) {
   dump_expr(out, expr->right, depth + 1);
   scope_end(out, depth);
 }
+void dump_paren_expr(std::string& out, const paren_expr* e, unsigned depth) {
+  fillmargin(out, depth);
+  out += "[parenthesized]\n";
+  scope_beg(out, depth, "inner");
+  dump_expr(out, e->inner, depth + 1);
+  scope_end(out, depth);
+}
 void dump_expr(std::string& out, const expr* e, unsigned depth) {
   scope_beg(out, depth);
   switch (e->kind()) {
@@ -81,6 +95,9 @@ void dump_expr(std::string& out, const expr* e, unsigned depth) {
       break;
     case node_kind::val:
       dump_val(out, static_cast<const val_term*>(e), depth + 1);
+      break;
+    case node_kind::paren_expr:
+      dump_paren_expr(out, static_cast<const paren_expr*>(e), depth + 1);
       break;
     default:
       fillmargin(out, depth + 1);

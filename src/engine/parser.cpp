@@ -106,13 +106,20 @@ struct tu {
                           },
                           [this](token_id id) -> expr_result_type {
                             consume_token();
-                            return parse_func_call(id);
+                            if (is<token_lparen>(curtk)) {
+                              return parse_func_call(id);
+                            } else {
+                              return make<val_term>(id);
+                            }
                           },
                           [this](token_lparen) -> expr_result_type {
                             consume_token();
-                            return parse_term().and_then([&](expr* expr) -> expr_result_type {
+                            return parse_expr().and_then([&](expr* inner) -> expr_result_type {
+                              if (!is<token_rparen>(curtk)) {
+                                return std::unexpected{translate_ec::unknown};
+                              }
                               consume_token();
-                              return expr;
+                              return make<paren_expr>(inner);
                             });
                           },
                           [](auto) -> expr_result_type { return std::unexpected{translate_ec::unknown}; },

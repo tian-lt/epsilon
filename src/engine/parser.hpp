@@ -47,13 +47,13 @@ struct expr {
 };
 
 struct paren_expr : expr {
-  paren_expr() noexcept : expr(node_kind::paren_expr) {}
   explicit paren_expr(expr* inner_content) noexcept : expr(node_kind::paren_expr), inner(inner_content) {}
   expr* inner = nullptr;
 };
 struct val_term : expr {
-  val_term(std::variant<token_integer_literal, token_real_literal> value) : expr(node_kind::val), val(value) {}
-  std::variant<token_integer_literal, token_real_literal> val;
+  using value_type = std::variant<token_integer_literal, token_real_literal, token_id>;
+  val_term(value_type value) : expr(node_kind::val), val(value) {}
+  value_type val;
 };
 struct func_call : expr {
   explicit func_call(token_id funcname, std::vector<expr*> parameters) noexcept
