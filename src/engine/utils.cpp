@@ -2,8 +2,10 @@
 // Copyright (c) 2026-present Tian Liao
 
 // std
+#include <algorithm>
 #include <format>
 #include <optional>
+#include <ranges>
 #include <string_view>
 
 // epx
@@ -14,107 +16,123 @@ namespace epx::script {
 
 namespace details {
 namespace {
-void dump_expr(std::string& out, const expr* e, unsigned depth);
-void fillmargin(std::string& out, unsigned depth) { out.append(depth * 2uz, ' '); }
-void scope_beg(std::string& out, unsigned depth, std::optional<std::string_view> scope_name = std::nullopt) {
-  fillmargin(out, depth);
-  if (scope_name.has_value()) {
-    out += std::format("{}={{\n", *scope_name);
-  } else {
-    out += "{\n";
-  }
-}
-void scope_end(std::string& out, unsigned depth) {
-  fillmargin(out, depth);
-  out += "}\n";
-}
 
-void dump_val(std::string& out, const val_term* val, unsigned depth) {
-  std::visit(tmp::overloads{
-                 [&](token_integer_literal literal) {
-                   fillmargin(out, depth);
-                   out += std::format("integer: {}\n", literal.raw);
-                 },
-                 [&](token_real_literal literal) {
-                   fillmargin(out, depth);
-                   out += std::format("real: {}\n", literal.raw);
-                 },
-                 [&](token_id id) {
-                   fillmargin(out, depth);
-                   out += std::format("id: {}\n", id.raw);
-                 },
-                 [&](auto) {
-                   fillmargin(out, depth);
-                   out += std::format("unknown\n");
-                 },
-             },
-             val->val);
-}
-void dump_binop_expr(std::string& out, const binop_expr* expr, unsigned depth) {
-  char opch;
-  switch (expr->kind()) {
-    case node_kind::add_expr:
-      opch = '+';
-      break;
-    case node_kind::sub_expr:
-      opch = '-';
-      break;
-    case node_kind::mul_expr:
-      opch = '*';
-      break;
-    case node_kind::div_expr:
-      opch = '/';
-      break;
-    default:
-      opch = '?';
+class dump_session {
+ public:
+  explicit dump_session(const mathscript& script) noexcept : script_(script) {}
+  std::string run() && {
+    for (auto i = 0uz; i < script_.statements.size(); ++i) {
+      result_ += std::format("stmt[{}]=", i);
+      dump_expr(std::get<expr*>(script_.statements[i]));
+    }
+    return result_;
   }
-  fillmargin(out, depth);
-  out += std::format("[binop_expr {}]\n", opch);
-  scope_beg(out, depth, "left");
-  dump_expr(out, expr->left, depth + 1);
-  scope_end(out, depth);
-  scope_beg(out, depth, "right");
-  dump_expr(out, expr->right, depth + 1);
-  scope_end(out, depth);
-}
-void dump_paren_expr(std::string& out, const paren_expr* e, unsigned depth) {
-  fillmargin(out, depth);
-  out += "[parenthesized]\n";
-  scope_beg(out, depth, "inner");
-  dump_expr(out, e->inner, depth + 1);
-  scope_end(out, depth);
-}
-void dump_expr(std::string& out, const expr* e, unsigned depth) {
-  scope_beg(out, depth);
-  switch (e->kind()) {
-    case node_kind::add_expr:
-    case node_kind::sub_expr:
-    case node_kind::mul_expr:
-    case node_kind::div_expr:
-      dump_binop_expr(out, static_cast<const binop_expr*>(e), depth + 1);
-      break;
-    case node_kind::val:
-      dump_val(out, static_cast<const val_term*>(e), depth + 1);
-      break;
-    case node_kind::paren_expr:
-      dump_paren_expr(out, static_cast<const paren_expr*>(e), depth + 1);
-      break;
-    default:
-      fillmargin(out, depth + 1);
-      out += "[unknown expr]\n";
+
+ private:
+  void fill_margin() { result_.append(margin_, ' '); }
+  [[nodiscard]] unsigned new_margin() {
+    auto old_margin_ = margin_;
+    margin_ = 2u + (unsigned)std::ranges::distance(result_ | std::views::reverse | std::views::take_while([](char ch) {
+                                                     return ch != '\n' && ch != '\r';
+                                                   }));
+    return old_margin_;
   }
-  scope_end(out, depth);
-}
-void dump_stmt(std::string& out, const stmt stmt, unsigned depth) { dump_expr(out, std::get<expr*>(stmt), depth); }
+  void restore_margin(unsigned old_margin) { margin_ = old_margin; }
+  void feed_line() {
+    if (result_.empty()) return;
+    if (result_.back() == '\r' || result_.back() == '\n') return;
+    result_ += '\n';
+  }
+  void dump_val(const val_term* val) {
+    std::visit(tmp::overloads{
+                   [&](token_integer_literal literal) { result_ += std::format("[val|integer={}]", literal.raw); },
+                   [&](token_real_literal literal) { result_ += std::format("[val|real={}]", literal.raw); },
+                   [&](token_id id) { result_ += std::format("[val|id={}]", id.raw); },
+                   [&](auto) { result_ = "[val|unknown]"; },
+               },
+               val->val);
+  }
+  void dump_binop_expr(const binop_expr* e) {
+    char opch;
+    switch (e->kind()) {
+      case node_kind::add_expr:
+        opch = '+';
+        break;
+      case node_kind::sub_expr:
+        opch = '-';
+        break;
+      case node_kind::mul_expr:
+        opch = '*';
+        break;
+      case node_kind::div_expr:
+        opch = '/';
+        break;
+      default:
+        opch = '?';
+    }
+    auto om = new_margin();
+    result_ += std::format("[bin_op_expr|op={}]\n", opch);
+    fill_margin();
+    result_ += "left=";
+    dump_expr(e->left);
+    feed_line();
+    fill_margin();
+    result_ += "right=";
+    dump_expr(e->right);
+    feed_line();
+    restore_margin(om);
+  }
+  void dump_paren_expr(const paren_expr* e) {
+    auto om = new_margin();
+    result_ += "[paren_expr]\n";
+    fill_margin();
+    result_ += "inner=";
+    dump_expr(e->inner);
+    feed_line();
+    restore_margin(om);
+  }
+  void dump_func_call(const func_call* f) {
+    auto om = new_margin();
+    result_ += std::format("[func_call|id={}, param_count={}]\n", f->id.raw, f->params.size());
+    for (auto i = 0uz; i < f->params.size(); ++i) {
+      fill_margin();
+      result_ += std::format("param[{}]=", i);
+      dump_expr(f->params[i]);
+      feed_line();
+    }
+    restore_margin(om);
+  }
+  void dump_expr(const expr* e) {
+    switch (e->kind()) {
+      case node_kind::add_expr:
+      case node_kind::sub_expr:
+      case node_kind::mul_expr:
+      case node_kind::div_expr:
+        dump_binop_expr(static_cast<const binop_expr*>(e));
+        break;
+      case node_kind::val:
+        dump_val(static_cast<const val_term*>(e));
+        break;
+      case node_kind::paren_expr:
+        dump_paren_expr(static_cast<const paren_expr*>(e));
+        break;
+      case node_kind::func_call:
+        dump_func_call(static_cast<const func_call*>(e));
+        break;
+      default:
+        result_ += "??? unknown expr ???";
+    }
+  }
+
+ private:
+  std::string result_;
+  const mathscript& script_;
+  unsigned margin_ = 0;
+};
+
 }  // namespace
 }  // namespace details
 
-std::string dump(const mathscript& script) noexcept {
-  std::string result;
-  for (auto& stmt : script.statements) {
-    details::dump_stmt(result, stmt, 0);
-  }
-  return result;
-}
+std::string dump(const mathscript& script) noexcept { return details::dump_session{script}.run(); }
 
 }  // namespace epx::script

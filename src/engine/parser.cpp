@@ -126,7 +126,28 @@ struct tu {
                       },
                       curtk);
   }
-  std::expected<expr*, translate_ec> parse_func_call(token_id) noexcept { abort(); }
+  std::expected<expr*, translate_ec> parse_func_call(token_id id) noexcept {
+    if (!is<token_lparen>(curtk)) {
+      std::terminate();
+    }
+    std::vector<expr*> param_seq;
+    do {
+      consume_token();
+      if (is<token_rparen>(curtk)) {
+        break;
+      }
+      auto param_res = parse_expr();
+      if (!param_res.has_value()) {
+        return std::unexpected{param_res.error()};
+      }
+      param_seq.push_back(*param_res);
+    } while (is<token_op_comma>(curtk));
+    if (!is<token_rparen>(curtk)) {
+      return std::unexpected{translate_ec::unknown};
+    }
+    consume_token();
+    return make<func_call>(id, std::move(param_seq));
+  }
   void consume_token() noexcept {
     curtk = nextk;
     auto res = lex();
